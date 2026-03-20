@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ wedding_name }} - Mehmonlar Nazorati</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2, h3 { color: #2c3e50; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
+        
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .back-btn { text-decoration: none; color: #7f8c8d; font-weight: bold; }
+        
+        /* Forma stili */
+        .add-guest-form { background: #fdfaf6; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; align-items: end; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 14px; margin-bottom: 5px; font-weight: bold; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .submit-btn { background-color: #D4AF37; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.3s; }
+        .submit-btn:hover { background-color: #b8860b; }
+
+        /* Jadval va O'chirish tugmalari */
+        .action-bar { display: flex; gap: 10px; margin-bottom: 10px; }
+        .delete-btn { background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; display: none; }
+        .delete-btn:hover { background-color: #c0392b; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #2c3e50; }
+        tr:hover { background-color: #f1f1f1; }
+        .status-badge { padding: 4px 8px; background: #e8f5e9; color: #2e7d32; border-radius: 4px; font-size: 12px; }
+        
+        /* Checkbox stili */
+        .select-check { width: 18px; height: 18px; cursor: pointer; }
+
+        /* Tasdiqlash va Yuklab olish bo'limi */
+        .download-section { margin-top: 40px; padding: 30px; border-top: 2px dashed #D4AF37; text-align: center; background-color: #fffdfa; border-radius: 0 0 12px 12px; }
+        .zip-btn { display: inline-block; padding: 18px 40px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 20px; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3); transition: 0.3s; transform: scale(1); }
+        .zip-btn:hover { background-color: #219150; transform: scale(1.05); }
+        .info-text { color: #666; margin-bottom: 15px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-actions">
+        <a href="{{ url_for('admin_panel') }}" class="back-btn">← Barcha to'ylar ro'yxatiga qaytish</a>
+        <h2>To'y: {{ wedding_name.replace('_', ' ') }}</h2>
+    </div>
+
+    <!-- Yangi mehmon qo'shish formasi -->
+    <h3>Yangi mehmon qo'shish</h3>
+    <form action="{{ url_for('add_guest', wedding_name=wedding_name) }}" method="POST" class="add-guest-form">
+        <div class="form-group">
+            <label>Mehmon Ismi Familiyasi</label>
+            <input type="text" name="name" placeholder="Masalan: Jasurbek Oysanam" required>
+        </div>
+        <div class="form-group">
+            <label>Stol raqami (ixtiyoriy)</label>
+            <input type="text" name="table" placeholder="12">
+        </div>
+        <div class="form-group">
+            <label>O'rindiq (ixtiyoriy)</label>
+            <input type="text" name="seat" placeholder="5">
+        </div>
+        <button type="submit" class="submit-btn">+ Qo'shish va Rasm yaratish</button>
+    </form>
+
+    <!-- Mehmonlar ro'yxati -->
+    <h3>Mehmonlar ro'yxati ({{ guests|length }} ta)</h3>
+    
+    <form id="deleteForm" action="{{ url_for('delete_guests', wedding_name=wedding_name) }}" method="POST">
+        <div class="action-bar">
+            <button type="submit" id="mainDeleteBtn" class="delete-btn" onclick="return confirm('Tanlangan mehmonlarni o\'chirishga ishonchingiz komilmi?')">
+                🗑 Tanlanganlarni o'chirish
+            </button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40px;"><input type="checkbox" id="selectAll" class="select-check"></th>
+                    <th>ID</th>
+                    <th>Ism</th>
+                    <th>Stol</th>
+                    <th>O'rindiq</th>
+                    <th>Holati</th>
+                    <th>Havola</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for guest in guests %}
+                <tr>
+                    <td><input type="checkbox" name="guest_ids" value="{{ guest.id }}" class="select-check guest-checkbox"></td>
+                    <td>{{ guest.id }}</td>
+                    <td><strong>{{ guest.name }}</strong></td>
+                    <td>{{ guest.table if guest.table else '-' }}</td>
+                    <td>{{ guest.seat if guest.seat else '-' }}</td>
+                    <td><span class="status-badge">Rasm tayyor ✅</span></td>
+                    <td>
+                        <a href="{{ url_for('static', filename='invitations/' + wedding_name + '/guest_' + guest.id|string + '.jpg') }}" target="_blank">Rasm</a> | 
+                        <a href="{{ url_for('invitation', wedding_name=wedding_name, guest_id=guest.id) }}" target="_blank">Link</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+
+    <!-- TASDIQLASH VA ZIP YUKLASH -->
+    <div class="download-section">
+        <p class="info-text">Barcha mehmonlar qo'shib bo'linganidan so'ng, QR-kodli tayyor rasmlarni bitta ZIP arxivda yuklab oling:</p>
+        <a href="{{ url_for('download_all', wedding_name=wedding_name) }}" class="zip-btn">
+            ✅ TASDIQLASH VA ZIP YUKLASH
+        </a>
+        <p style="font-size: 12px; color: #999; margin-top: 10px;">(Ushbu ZIP ichida har bir mehmon uchun alohida .jpg rasm bo'ladi)</p>
+    </div>
+</div>
+
+<script>
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.guest-checkbox');
+    const deleteBtn = document.getElementById('mainDeleteBtn');
+
+    // Hammasini tanlash mantiqi
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(cb => {
+            cb.checked = selectAll.checked;
+        });
+        toggleDeleteButton();
+    });
+
+    // Alohida checkboxlar o'zgarganda tugmani ko'rsatish/yashirish
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', toggleDeleteButton);
+    });
+
+    function toggleDeleteButton() {
+        const checkedCount = document.querySelectorAll('.guest-checkbox:checked').length;
+        deleteBtn.style.display = checkedCount > 0 ? 'block' : 'none';
+    }
+</script>
+
+</body>
+</html>

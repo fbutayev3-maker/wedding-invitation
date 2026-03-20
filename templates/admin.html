@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | Taklifnoma Generator</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        input { padding: 10px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; background: #d4af37; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border: 1px solid #eee; text-align: left; }
+        .download-link { color: #d4af37; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Yangi Mehmon Qo'shish</h2>
+        <form action="/add_guest" method="post">
+            <input type="text" name="name" placeholder="Ism sharifi" required>
+            <input type="number" name="table" placeholder="Stol #" required style="width: 60px;">
+            <input type="number" name="seat" placeholder="Stul #" required style="width: 60px;">
+            <button type="submit">Qo'shish va QR yaratish</button>
+        </form>
+
+        <hr>
+
+        <h3>Mavjud Mehmonlar</h3>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Ism</th>
+                <th>Joyi</th>
+                <th>Taklifnoma (Rasm)</th>
+            </tr>
+            {% for g in guests %}
+            <tr>
+                <td>{{ g.id }}</td>
+                <td>{{ g.name }}</td>
+                <td>{{ g.table }}-stol, {{ g.seat }}-stul</td>
+                <td><a href="/static/invitations/taklifnoma_{{ g.id }}.png" target="_blank" class="download-link">Yuklab olish</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

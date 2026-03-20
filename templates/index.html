@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taklifnoma | {{ guest.name }}</title>
+    <!-- Chiroyli shriftlar -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #d4af37;
+            --dark-gold: #b8860b;
+            --text-color: #5d4037;
+        }
+        body {
+            background-color: #fdfaf6;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            max-width: 500px;
+            width: 100%;
+            padding: 40px 20px;
+            border: 1px solid #eee;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            text-align: center;
+            position: relative;
+        }
+        /* Oltinramka */
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 1px solid var(--gold);
+            pointer-events: none;
+        }
+
+        /* Rasm ramkasi (Oval/Yuraksimon) */
+        .photo-frame {
+            width: 280px;
+            height: 320px;
+            margin: 0 auto 30px;
+            position: relative;
+            border-radius: 140px 140px 20px 20px;
+            overflow: hidden;
+            border: 4px solid var(--gold);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .couple-names {
+            font-family: 'Great Vibes', cursive;
+            font-size: 42px;
+            color: var(--dark-gold);
+            margin-bottom: 10px;
+        }
+        .guest-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 20px;
+        }
+        .guest-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0 25px;
+            border-bottom: 1px double var(--gold);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        .main-text {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 16px;
+            line-height: 1.8;
+            padding: 0 20px;
+        }
+
+        .info-section {
+            margin: 30px 0;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            padding: 20px 0;
+        }
+
+        /* Stol va Stul */
+        .seat-box {
+            background: #fdf5e6;
+            padding: 10px 20px;
+            border: 1px solid var(--gold);
+            border-radius: 5px;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        /* Google Map Tugmasi */
+        .map-btn {
+            display: inline-block;
+            background: var(--dark-gold);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        /* Musiqa Tugmasi */
+        .music-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--gold);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-size: 20px;
+        }
+
+        .family-footer {
+            margin-top: 30px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .family-name-highlight {
+            color: var(--dark-gold);
+            font-size: 22px;
+            font-family: 'Playfair Display', serif;
+            font-weight: bold;
+            display: block;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Musiqa pleyeri -->
+    <audio id="bgMusic" loop>
+        <source src="/static/audio/music.mp3" type="audio/mpeg">
+    </audio>
+    <button class="music-btn" onclick="toggleMusic()" id="mBtn">🎵</button>
+
+    <div class="container">
+        <!-- Kelin-Kuyov rasmi -->
+        <div class="photo-frame">
+            <img src="/static/invitations/{{ w_info.photo }}" alt="Wedding Image">
+        </div>
+
+        <div class="couple-names">{{ w_info.groom }} & {{ w_info.bride }}</div>
+
+        <div class="guest-label">Hurmatli</div>
+        <div class="guest-name">{{ guest.name }}</div>
+
+        <div class="main-text">
+            Siz(lar)ni o‘g‘limiz <b>{{ w_info.groom }}</b> va kelinimiz <b>{{ w_info.bride }}</b>ning 
+            nikoh to‘yi munosabati bilan tashkil etilgan tantanali dasturxonimizning 
+            qadrli mehmoni bo‘lishga taklif qilamiz!
+        </div>
+
+        <!-- STOL VA JOY RAQAMLARI (TAKLY MATNIDAN KEYIN, SANADAN OLDIN) -->
+        <div style="margin-top: 25px;">
+            {% if guest.table and guest.table|string != 'nan' and guest.table|string != 'None' and guest.table != 0 %}
+            <div class="seat-box">
+                <small>STOL</small><br>
+                <b>{{ guest.table|int if guest.table is number else guest.table }}</b>
+            </div>
+            {% endif %}
+            
+            {% if guest.seat and guest.seat|string != 'nan' and guest.seat|string != 'None' and guest.seat != 0 %}
+            <div class="seat-box">
+                <small>JOY</small><br>
+                <b>{{ guest.seat|int if guest.seat is number else guest.seat }}</b>
+            </div>
+            {% endif %}
+        </div>
+        <!-- ------------------------------------------------------------- -->
+
+        <div class="info-section">
+            <div style="margin-bottom: 10px;">
+                <b>Kuni va vaqti:</b><br>
+                <span>{{ format_uzb_date(w_info.date) }}</span>
+            </div>
+            <div>
+                <b>Manzil:</b><br>
+                <span>{{ w_info.venue }}</span>
+            </div>
+        </div>
+
+        <!-- To'y egalari -->
+        <div class="family-footer">
+            Hurmat bilan:
+            <span class="family-name-highlight">{{ w_info.family_name }}lar oilasi</span>
+        </div>
+
+        <a href="{{ w_info.location }}" target="_blank" class="map-btn">📍 TO'YXONA MANZILI</a>
+        
+        <p style="font-size: 12px; margin-top: 25px; color: #aaa;">Tashrifingizdan mamnunmiz!</p>
+    </div>
+
+    <script>
+        var music = document.getElementById("bgMusic");
+        var btn = document.getElementById("mBtn");
+
+        function toggleMusic() {
+            if (music.paused) {
+                music.play();
+                btn.innerHTML = "⏸";
+                btn.style.background = "#e74c3c";
+            } else {
+                music.pause();
+                btn.innerHTML = "🎵";
+                btn.style.background = "#d4af37";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | To'y Boshqaruvi</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #2c3e50; }
+        
+        /* Form elementlari */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="url"], input[type="datetime-local"], select {
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px;
+        }
+        .flex-group { display: flex; gap: 15px; }
+        .flex-group > div { flex: 1; }
+
+        /* Tugmalar */
+        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-weight: 600; display: inline-block; transition: 0.3s; }
+        .btn-submit { background: #27ae60; color: white; width: 100%; margin-top: 10px; }
+        .btn-submit:hover { background: #219150; }
+        .btn-view { background: #3498db; color: white; font-size: 13px; }
+        .btn-view:hover { background: #2980b9; }
+        .btn-del { background: #e74c3c; color: white; margin-top: 15px; }
+        .btn-del:hover { background: #c0392b; }
+
+        /* Ro'yxat dizayni */
+        .wedding-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px; border-bottom: 1px solid #f1f1f1; transition: 0.2s;
+        }
+        .wedding-item:hover { background: #fafafa; }
+        .wedding-info { display: flex; align-items: center; }
+        .wedding-info input { margin-right: 15px; transform: scale(1.2); }
+        
+        .empty-msg { text-align: center; color: #7f8c8d; padding: 20px; font-style: italic; }
+        .logout-link { float: right; color: #e74c3c; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="{{ url_for('logout') }}" class="logout-link">Chiqish (Logout)</a>
+    <h1>Wedding Admin Panel</h1>
+
+    <!-- 1. Yangi To'y Qo'shish Formasi -->
+    <div class="card">
+        <h2>+ Yangi Loyiha (To'y) Yarating</h2>
+        <form action="{{ url_for('add_wedding') }}" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Loyiha nomi (Papka nomi bo'ladi, masalan: Aziz_Lola)</label>
+                <input type="text" name="wedding_name" placeholder="Masalan: aziz_toy" required>
+            </div>
+
+            <div class="flex-group">
+                <div class="form-group">
+                    <label>Kuyov ismi</label>
+                    <input type="text" name="groom" placeholder="Masalan: Azizbek" required>
+                </div>
+                <div class="form-group">
+                    <label>Kelin ismi</label>
+                    <input type="text" name="bride" placeholder="Masalan: Sevinch" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>To'y egalari (Taklifnoma oxirida chiqadi)</label>
+                <input type="text" name="family_name" placeholder="Masalan: Karimovlar oilasi" required>
+            </div>
+
+            <div class="form-group">
+                <label>Manzil (To'yxona nomi)</label>
+                <input type="text" name="venue" placeholder="Masalan: "Tantanalar" saroyi" required>
+            </div>
+
+            <div class="flex-group">
+                <div class="form-group">
+                    <label>Sana va Vaqt</label>
+                    <input type="datetime-local" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label>Google Map Link (Location)</label>
+                    <input type="url" name="location" placeholder="https://maps.google.com/...">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Kelin-kuyov rasmi (Taklifnoma foni uchun)</label>
+                <input type="file" name="photo" accept="image/*">
+            </div>
+
+            <button type="submit" class="btn btn-submit">LOYIHANI YARATISH VA SAQLASH</button>
+        </form>
+    </div>
+
+    <!-- 2. Mavjud Loyihalar Ro'yxati -->
+    <div class="card">
+        <h2>Mavjud Loyihalar</h2>
+        
+        {% if weddings %}
+            <form action="{{ url_for('delete_weddings') }}" method="post" id="deleteForm">
+                {% for w in weddings %}
+                <div class="wedding-item">
+                    <div class="wedding-info">
+                        <input type="checkbox" name="wedding_ids" value="{{ w }}">
+                        <strong>{{ w }}</strong>
+                    </div>
+                    <a href="{{ url_for('view_wedding', name=w) }}" class="btn btn-view">Mehmonlar va Boshqaruv</a>
+                </div>
+                {% endfor %}
+                
+                <button type="submit" class="btn btn-del" onclick="return confirm('Tanlangan barcha loyihalarni va ularga tegishli rasmlarni o\'chirishga aminmisiz?')">
+                    Tanlanganlarni o'chirish
+                </button>
+            </form>
+        {% else %}
+            <div class="empty-msg">
+                <p>Hozircha hech qanday loyiha yo'q. Yuqoridagi forma orqali birinchi to'y loyihasini yarating.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Agar hech narsa tanlanmasa o'chirish tugmasini tekshirish
+    document.getElementById('deleteForm').onsubmit = function() {
+        var checkboxes = document.querySelectorAll('input[name="wedding_ids"]:checked');
+        if (checkboxes.length === 0) {
+            alert('Iltimos, o\'chirmoqchi bo\'lgan loyihalaringizni tanlang!');
+            return false;
+        }
+        return true;
+    };
+</script>
+
+</body>
+</html>

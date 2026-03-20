@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tanlov - Wedding 2026</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f4f4f4; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        .btn-group { display: flex; flex-direction: column; gap: 15px; margin-top: 25px; }
+        .btn { padding: 15px 25px; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; font-weight: bold; }
+        .btn-edit { background: #D4AF37; color: white; }
+        .btn-ready { background: #2ecc71; color: white; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Loyiha "{{ wedding_name }}" yaratildi!</h2>
+        <div class="btn-group">
+            <a href="{{ url_for('editor', wedding_name=wedding_name) }}" class="btn btn-edit">🎨 YANGI SHABLON YARATISH (EDIT)</a>
+            <a href="{{ url_for('view_wedding', name=wedding_name) }}" class="btn btn-ready">✅ TAYYOR SHABLONDAN FOYDALANISH</a>
+        </div>
+    </div>
+</body>
+</html>
