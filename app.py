@@ -5,8 +5,10 @@ import zipfile
 import io
 import shutil
 import pandas as pd
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, session, url_for, send_file
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = "wedding_2026_ultra_final_v3"
@@ -36,7 +38,11 @@ def get_font(path, size):
 def format_uzb_date(date_str):
     months = {"01":"yanvar","02":"fevral","03":"mart","04":"aprel","05":"may","06":"iyun","07":"iyul","08":"avgust","09":"sentyabr","10":"oktyabr","11":"noyabr","12":"dekabr"}
     try:
-        dt = date_str.split("T")[0] if "T" in date_str else date_str.split(" ")[0]
+        if "T" in date_str:
+            dt_part, tm_part = date_str.split("T")
+            y, m, d = dt_part.split("-")
+            return f"{int(d)}-{months[m]}, {y}-yil. Soat: {tm_part}"
+        dt = date_str.split(" ")[0]
         y, m, d = dt.split("-")
         return f"{int(d)}-{months[m]}, {y}-yil"
     except:
@@ -47,102 +53,92 @@ def create_pro_invitation(wedding_name, guest_id, name, table='', seat=''):
     with open(os.path.join(w_path, 'info.json'), 'r', encoding='utf-8') as f:
         w_info = json.load(f)
 
-    # 1. Canvas yaratish
+    template = w_info.get('template_choice', 'default')
     img = Image.new('RGB', (800, 1200), color='#FFFFFF')
     draw = ImageDraw.Draw(img)
     
-    gold = "#C5A059"
-    dark = "#222222"
+    gold = "#b38b3d" if template == 'kabutarlar' else "#C5A059"
+    dark = "#292524" if template == 'kabutarlar' else "#222222"
+    stone_light = "#a8a29e"
 
-    # 2. Tashqi ramka
-    draw.rectangle([20, 20, 780, 1180], outline=gold, width=2)
-
-    # 3. RASM CHIZISH QISMI (MUHIM!)
-    wedding_photo_name = w_info.get('photo', '')
-    photo_path = os.path.join(INVITES_DIR, wedding_photo_name)
-    
-    # Rasm ramkasi koordinatalari
-    frame_coords = [250, 70, 550, 370]
-    draw.rectangle(frame_coords, outline=gold, width=2)
-
-    if os.path.exists(photo_path) and os.path.isfile(photo_path):
-        try:
-            raw_photo = Image.open(photo_path).convert("RGB")
-            # Rasmni ramkaga moslab qirqish va joylash
-            photo_resized = ImageOps.fit(raw_photo, (298, 298), centering=(0.5, 0.5))
-            img.paste(photo_resized, (251, 71))
-        except Exception as e:
-            print(f"Rasm yuklashda xato: {e}")
-            draw.text((400, 220), "❤️", fill=gold, font=get_font(FONT_SERIF, 80), anchor="mm")
+    # --- RAMKA ---
+    if template == 'kabutarlar':
+        draw.rectangle([30, 30, 770, 1170], outline=gold, width=3)
+        draw.rectangle([45, 45, 755, 1155], outline=gold, width=1)
+        # Emoji o'rniga universal dekor
+        draw.text((400, 120), "~ ~ ~ * ~ ~ ~", fill=gold, font=get_font(FONT_SERIF, 40), anchor="mm")
+        draw.text((400, 180), "∞", fill=gold, font=get_font(FONT_SERIF, 60), anchor="mm")
+        top_offset = 260
     else:
-        # Agar rasm topilmasa yurakcha chizadi
-        draw.text((400, 220), "❤️", fill=gold, font=get_font(FONT_SERIF, 80), anchor="mm")
+        draw.rectangle([20, 20, 780, 1180], outline=gold, width=2)
+        wedding_photo_name = w_info.get('photo', '')
+        photo_path = os.path.join(INVITES_DIR, wedding_photo_name)
+        frame_coords = [250, 70, 550, 370]
+        draw.rectangle(frame_coords, outline=gold, width=2)
 
-    # 4. Kuyov & Kelin ismlari
-    draw.text((400, 450), f"{w_info.get('groom')} & {w_info.get('bride')}", 
-              fill=gold, font=get_font(FONT_CURSIVE, 80), anchor="mm")
+        if os.path.exists(photo_path) and os.path.isfile(photo_path):
+            try:
+                raw_photo = Image.open(photo_path).convert("RGB")
+                photo_resized = ImageOps.fit(raw_photo, (298, 298), centering=(0.5, 0.5))
+                img.paste(photo_resized, (251, 71))
+            except:
+                draw.text((400, 220), "❤️", fill=gold, font=get_font(FONT_SERIF, 80), anchor="mm")
+        else:
+            draw.text((400, 220), "❤️", fill=gold, font=get_font(FONT_SERIF, 80), anchor="mm")
+        top_offset = 450
 
-    # 5. Mehmon ismi
-    draw.text((400, 530), "HURMATLI", fill="#888888", font=get_font(FONT_SERIF, 22), anchor="mm")
-    draw.text((400, 590), name.upper(), fill=dark, font=get_font(FONT_SERIF, 55), anchor="mm")
-    draw.line([300, 630, 500, 630], fill=gold, width=2)
+    # --- ISMLAR VA MATNLAR ---
+    draw.text((400, top_offset), f"{w_info.get('groom')} & {w_info.get('bride')}", fill=gold, font=get_font(FONT_CURSIVE, 75), anchor="mm")
+    draw.text((400, top_offset + 80), "HURMATLI", fill=stone_light, font=get_font(FONT_SERIF, 22), anchor="mm")
+    draw.text((400, top_offset + 140), name.upper(), fill=dark, font=get_font(FONT_SERIF, 55), anchor="mm")
+    
+    if template != 'kabutarlar':
+        draw.line([300, top_offset + 180, 500, top_offset + 180], fill=gold, width=2)
 
-    # 6. Asosiy taklif matni
     invite_msg = ("Siz(lar)ni farzandlarimizning nikoh to‘yi munosabati bilan\n"
                   "tashkil etilgan tantanali dasturxonimizning\n"
                   "qadrli mehmoni bo‘lishga taklif qilamiz!")
-    
-    draw.multiline_text((400, 720), invite_msg, fill=dark, 
-                        font=get_font(FONT_SERIF, 24), 
-                        anchor="mm", align="center", spacing=12)
+    draw.multiline_text((400, top_offset + 250), invite_msg, fill=dark, font=get_font(FONT_SERIF, 24), anchor="mm", align="center", spacing=12)
 
-    # 7. STOL VA JOY (Taklifdan keyin)
-    place_info = ""
-    if table and str(table).strip() != "":
-        place_info += f"{table}-stol"
-    if seat and str(seat).strip() != "":
-        if place_info: place_info += ", "
-        place_info += f"{seat}-joy"
-    
-    if place_info:
-        draw.text((400, 810), place_info, fill=gold, font=get_font(FONT_SERIF, 35), anchor="mm")
+    display_date = format_uzb_date(w_info.get('date')).upper()
+    if template == 'kabutarlar':
+        draw.line([200, top_offset + 340, 600, top_offset + 340], fill="#f5f5f4", width=1)
+        draw.text((400, top_offset + 375), display_date, fill="#78350f", font=get_font(FONT_SERIF, 28), anchor="mm")
+        draw.line([200, top_offset + 410, 600, top_offset + 410], fill="#f5f5f4", width=1)
+        info_y = top_offset + 480
+    else:
+        draw.text((400, 880), "Kuni va vaqti:", fill=stone_light, font=get_font(FONT_SERIF, 20), anchor="mm")
+        draw.text((400, 920), display_date, fill=dark, font=get_font(FONT_SERIF, 32), anchor="mm")
+        info_y = 990
 
-    # 8. Sana va Manzil
-    draw.text((400, 880), "Kuni va vaqti:", fill="#888888", font=get_font(FONT_SERIF, 20), anchor="mm")
-    draw.text((400, 920), format_uzb_date(w_info.get('date')), fill=dark, font=get_font(FONT_SERIF, 32), anchor="mm")
-    
-    draw.text((400, 990), "Manzil:", fill="#888888", font=get_font(FONT_SERIF, 20), anchor="mm")
-    draw.text((400, 1030), w_info.get('venue'), fill=dark, font=get_font(FONT_SERIF, 32), anchor="mm")
+    draw.text((400, info_y), "MANZILI:", fill=stone_light, font=get_font(FONT_SERIF, 20), anchor="mm")
+    draw.text((400, info_y + 40), w_info.get('venue'), fill=dark, font=get_font(FONT_SERIF, 32), anchor="mm")
 
-    # 9. Oila nomi
     family = w_info.get('family_name', 'Fayziyevlar oilasi')
-    draw.text((400, 1110), f"Hurmat bilan: {family}", fill=gold, font=get_font(FONT_SERIF, 28), anchor="mm")
+    footer_y = 1110 if template != 'kabutarlar' else info_y + 120
+    prefix = "To'y egalari:" if template == 'kabutarlar' else "Hurmat bilan:"
+    # To'y egalari matni
+    draw.text((400, footer_y), f"{prefix} {family}", fill=gold, font=get_font(FONT_SERIF, 22), anchor="mm")
 
-    # 10. QR Kod
+    # --- QR KOD ---
     qr_url = f"http://{request.host}/invitation/{wedding_name}/{guest_id}"
-    qr_img = qrcode.make(qr_url).convert('RGB').resize((90, 90))
-    img.paste(qr_img, (680, 1080)) 
+    qr_img = qrcode.make(qr_url).convert('RGB').resize((130, 130))
+    
+    if template == 'kabutarlar':
+        # Markazda (335) va biroz teparoqda (950)
+        qr_coords = (335, 950) 
+    else:
+        # Standart shablonda o'ng pastki burchakda qoladi
+        qr_coords = (630, 1030)
 
-    # Saqlash
+    img.paste(qr_img, qr_coords) 
+
+    # --- SAQLASH ---
     save_path = os.path.join(INVITES_DIR, wedding_name)
     if not os.path.exists(save_path): os.makedirs(save_path)
     img.save(os.path.join(save_path, f'guest_{guest_id}.jpg'), "JPEG", quality=95)
 
 # --- ROUTES ---
-
-@app.route('/admin/delete_guests/<wedding_name>', methods=['POST'])
-def delete_guests(wedding_name):
-    if not session.get('logged_in'): return redirect(url_for('admin_login'))
-    guest_ids = request.form.getlist('guest_ids')
-    csv_path = os.path.join(BASE_DIR, wedding_name, 'guests.csv')
-    if os.path.exists(csv_path):
-        df = pd.read_csv(csv_path)
-        df = df[~df['id'].astype(str).isin(guest_ids)]
-        df.to_csv(csv_path, index=False)
-        for g_id in guest_ids:
-            img_path = os.path.join(INVITES_DIR, wedding_name, f'guest_{g_id}.jpg')
-            if os.path.exists(img_path): os.remove(img_path)
-    return redirect(url_for('view_wedding', name=wedding_name))
 
 @app.route('/')
 @app.route('/admin')
@@ -164,6 +160,15 @@ def admin_panel():
     saved_ts = [f.replace('.json', '') for f in os.listdir(TEMPLATES_CONFIG_DIR) if f.endswith('.json')]
     return render_template('admin_main.html', weddings=weddings, saved_templates=saved_ts)
 
+@app.route('/admin/wedding/<name>')
+def view_wedding(name):
+    if not session.get('logged_in'): return redirect(url_for('admin_login'))
+    w_path = os.path.join(BASE_DIR, name)
+    with open(os.path.join(w_path, 'info.json'), 'r', encoding='utf-8') as f:
+        w_info = json.load(f)
+    df = pd.read_csv(os.path.join(w_path, 'guests.csv'))
+    return render_template('wedding_details.html', wedding_name=name, w_info=w_info, guests=df.to_dict(orient='records'))
+
 @app.route('/admin/add_wedding', methods=['POST'])
 def add_wedding():
     if not session.get('logged_in'): return redirect(url_for('admin_login'))
@@ -174,50 +179,47 @@ def add_wedding():
         photo = request.files.get('photo')
         photo_name = f"photo_{title}.jpg" if photo else "default_wedding.jpg"
         if photo: photo.save(os.path.join(INVITES_DIR, photo_name))
-        
         info = {
-            "groom": request.form.get('groom'),
-            "bride": request.form.get('bride'),
-            "venue": request.form.get('venue'),
-            "date": request.form.get('date'),
-            "photo": photo_name,
-            "family_name": request.form.get('family_name', ''),
-            "location": request.form.get('location', '#'),
+            "groom": request.form.get('groom'), 
+            "bride": request.form.get('bride'), 
+            "venue": request.form.get('venue'), 
+            "date": request.form.get('date'), 
+            "photo": photo_name, 
+            "family_name": request.form.get('family_name', ''), 
+            "location": request.form.get('location', '#'), 
             "template_choice": request.form.get('template_choice', 'default')
         }
         with open(os.path.join(w_path, 'info.json'), 'w', encoding='utf-8') as f:
             json.dump(info, f, ensure_ascii=False, indent=4)
-        
-        # CSV ustunlari to'g'irlandi: table va seat qo'shildi
         pd.DataFrame(columns=['id', 'name', 'table', 'seat']).to_csv(os.path.join(w_path, 'guests.csv'), index=False)
     return render_template('choose_mode.html', wedding_name=title)
-
-@app.route('/admin/wedding/<name>')
-def view_wedding(name):
-    if not session.get('logged_in'): return redirect(url_for('admin_login'))
-    df = pd.read_csv(os.path.join(BASE_DIR, name, 'guests.csv'))
-    return render_template('wedding_details.html', wedding_name=name, guests=df.to_dict(orient='records'))
 
 @app.route('/admin/add_guest/<wedding_name>', methods=['POST'])
 def add_guest(wedding_name):
     csv_path = os.path.join(BASE_DIR, wedding_name, 'guests.csv')
     df = pd.read_csv(csv_path)
-    
-    # Yangi ID aniqlash
     new_id = int(df['id'].max() + 1) if not df.empty else 1
-    
     guest_name = request.form.get('name')
-    table_no = request.form.get('table', '') # Formadan stol raqami
-    seat_no = request.form.get('seat', '')   # Formadan joy raqami
-    
-    # Ma'lumotlarni qo'shish
+    table_no = request.form.get('table', '')
+    seat_no = request.form.get('seat', '')
     new_guest = pd.DataFrame([[new_id, guest_name, table_no, seat_no]], columns=['id', 'name', 'table', 'seat'])
     df = pd.concat([df, new_guest], ignore_index=True)
     df.to_csv(csv_path, index=False)
-    
-    # Rasmni barcha parametrlar bilan yaratish
     create_pro_invitation(wedding_name, new_id, guest_name, table_no, seat_no)
-    
+    return redirect(url_for('view_wedding', name=wedding_name))
+
+@app.route('/admin/delete_guests/<wedding_name>', methods=['POST'])
+def delete_guests(wedding_name):
+    if not session.get('logged_in'): return redirect(url_for('admin_login'))
+    guest_ids = request.form.getlist('guest_ids')
+    csv_path = os.path.join(BASE_DIR, wedding_name, 'guests.csv')
+    if os.path.exists(csv_path):
+        df = pd.read_csv(csv_path)
+        df = df[~df['id'].astype(str).isin(guest_ids)]
+        df.to_csv(csv_path, index=False)
+        for g_id in guest_ids:
+            img_path = os.path.join(INVITES_DIR, wedding_name, f'guest_{g_id}.jpg')
+            if os.path.exists(img_path): os.remove(img_path)
     return redirect(url_for('view_wedding', name=wedding_name))
 
 @app.route('/admin/delete_weddings', methods=['POST'])
@@ -252,23 +254,42 @@ def logout():
     session.clear()
     return redirect(url_for('admin_login'))
 
-@app.route('/admin/editor/<wedding_name>')
-def editor(wedding_name):
+@app.route('/admin/edit_wedding_info/<wedding_name>', methods=['POST'])
+def edit_wedding_info(wedding_name):
     if not session.get('logged_in'): return redirect(url_for('admin_login'))
     w_path = os.path.join(BASE_DIR, wedding_name)
-    with open(os.path.join(w_path, 'info.json'), 'r', encoding='utf-8') as f:
-        w_info = json.load(f)
-    return render_template('editor.html', wedding_name=wedding_name, w_info=w_info)
-
-@app.route('/admin/save_template', methods=['POST'])
-def save_template():
-    if not session.get('logged_in'): return {"status": "error"}, 403
-    data = request.json
-    template_name = data.get('template_name', 'unnamed_template')
-    file_path = os.path.join(TEMPLATES_CONFIG_DIR, f"{template_name}.json")
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(data['config'], f, ensure_ascii=False, indent=4)
-    return {"status": "success", "message": "Shablon saqlandi!"}
+    info_path = os.path.join(w_path, 'info.json')
+    if os.path.exists(info_path):
+        with open(info_path, 'r', encoding='utf-8') as f:
+            w_info = json.load(f)
+        
+        # Ma'lumotlarni yangilash
+        w_info['groom'] = request.form.get('groom')
+        w_info['bride'] = request.form.get('bride')
+        w_info['venue'] = request.form.get('venue')
+        w_info['date'] = request.form.get('date')
+        w_info['family_name'] = request.form.get('family_name')
+        w_info['location'] = request.form.get('location')
+        # SHABLONNI YANGILASH (Muhim!)
+        w_info['template_choice'] = request.form.get('template_choice', w_info.get('template_choice', 'default'))
+        
+        photo = request.files.get('photo')
+        if photo and photo.filename != '':
+            photo_name = f"photo_{wedding_name}.jpg"
+            photo.save(os.path.join(INVITES_DIR, photo_name))
+            w_info['photo'] = photo_name
+            
+        with open(info_path, 'w', encoding='utf-8') as f:
+            json.dump(w_info, f, ensure_ascii=False, indent=4)
+            
+        # Barcha rasmlarni yangilash
+        csv_path = os.path.join(w_path, 'guests.csv')
+        if os.path.exists(csv_path):
+            df = pd.read_csv(csv_path)
+            for _, guest in df.iterrows():
+                create_pro_invitation(wedding_name, guest['id'], guest['name'], guest.get('table',''), guest.get('seat',''))
+                
+    return redirect(url_for('view_wedding', name=wedding_name))
 
 @app.context_processor
 def utility_processor():
