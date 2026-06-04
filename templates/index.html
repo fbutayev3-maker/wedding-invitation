@@ -4,53 +4,87 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Taklifnoma | {{ guest.name }}</title>
-    <!-- Chiroyli shriftlar -->
+    
+    <!-- Shriftlar va Kutubxonalar -->
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
         :root {
             --gold: #d4af37;
             --dark-gold: #b8860b;
             --text-color: #5d4037;
+            --bg-color: #fdfaf6;
         }
+
         body {
-            background-color: #fdfaf6;
+            background-color: var(--bg-color);
             margin: 0;
             padding: 20px;
             font-family: 'Montserrat', sans-serif;
             color: var(--text-color);
             display: flex;
             justify-content: center;
+            overflow-x: hidden;
         }
+
+        /* Yuklanish ekrani */
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease;
+        }
+
+        .welcome-card {
+            background: white;
+            padding: 50px 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            border: 1px solid var(--gold);
+            max-width: 90%;
+        }
+
+        /* Asosiy Konteyner */
         .container {
             background: white;
             max-width: 500px;
             width: 100%;
-            padding: 40px 20px;
+            padding: 60px 25px;
             border: 1px solid #eee;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             text-align: center;
             position: relative;
+            opacity: 0; 
+            transform: translateY(30px);
         }
-        /* Oltinramka */
+
         .container::before {
             content: "";
             position: absolute;
-            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            top: 15px; left: 15px; right: 15px; bottom: 15px;
             border: 1px solid var(--gold);
             pointer-events: none;
         }
 
-        /* Rasm ramkasi (Oval/Yuraksimon) */
         .photo-frame {
             width: 280px;
-            height: 320px;
-            margin: 0 auto 30px;
+            height: 350px;
+            margin: 0 auto 40px;
             position: relative;
             border-radius: 140px 140px 20px 20px;
             overflow: hidden;
-            border: 4px solid var(--gold);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 5px solid white;
+            outline: 2px solid var(--gold);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
         }
+
         .photo-frame img {
             width: 100%;
             height: 100%;
@@ -59,180 +93,289 @@
 
         .couple-names {
             font-family: 'Great Vibes', cursive;
-            font-size: 42px;
+            font-size: 52px;
             color: var(--dark-gold);
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
-        .guest-label {
-            font-family: 'Playfair Display', serif;
-            font-size: 18px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 20px;
-        }
+
         .guest-name {
             font-family: 'Playfair Display', serif;
-            font-size: 28px;
+            font-size: 32px;
             font-weight: bold;
-            color: #333;
-            margin: 10px 0 25px;
-            border-bottom: 1px double var(--gold);
+            color: #222;
+            margin: 15px 0 30px;
             display: inline-block;
-            padding-bottom: 5px;
+            position: relative;
         }
 
-        .main-text {
-            font-family: 'Playfair Display', serif;
-            font-style: italic;
-            font-size: 16px;
-            line-height: 1.8;
-            padding: 0 20px;
+        .guest-name::after {
+            content: '';
+            position: absolute;
+            bottom: -5px; left: 0; width: 100%;
+            height: 2px; background: linear-gradient(to right, transparent, var(--gold), transparent);
         }
 
-        .info-section {
-            margin: 30px 0;
-            border-top: 1px solid #eee;
-            border-bottom: 1px solid #eee;
-            padding: 20px 0;
+        /* Countdown Style - Sekundlar bilan */
+        .countdown-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 40px 0;
+        }
+        .count-item {
+            background: #fff9f0;
+            border: 1px solid var(--gold);
+            padding: 10px 5px;
+            min-width: 60px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .count-num {
+            display: block;
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--dark-gold);
+        }
+        .count-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
         }
 
-        /* Stol va Stul */
+        /* Sekund uchun pulsatsiya effekti */
+        #secs-box {
+            border-color: #e74c3c;
+            animation: pulse 1s infinite;
+        }
+        #secs { color: #e74c3c; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); box-shadow: 0 0 10px rgba(231, 76, 60, 0.2); }
+            100% { transform: scale(1); }
+        }
+
         .seat-box {
             background: #fdf5e6;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border: 1px solid var(--gold);
-            border-radius: 5px;
+            border-radius: 12px;
             display: inline-block;
-            margin: 5px;
+            margin: 8px;
         }
 
-        /* Google Map Tugmasi */
         .map-btn {
             display: inline-block;
-            background: var(--dark-gold);
+            background: linear-gradient(135deg, var(--gold), var(--dark-gold));
             color: white;
             text-decoration: none;
-            padding: 15px 30px;
-            border-radius: 30px;
+            padding: 18px 40px;
+            border-radius: 50px;
             font-weight: bold;
-            margin-top: 20px;
+            margin-top: 30px;
+            box-shadow: 0 10px 20px rgba(212,175,55,0.3);
         }
 
-        /* Musiqa Tugmasi */
         .music-btn {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 30px; right: 30px;
             background: var(--gold);
             color: white;
-            width: 50px;
-            height: 50px;
+            width: 55px; height: 55px;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
-            font-size: 20px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none;
+            z-index: 1000; font-size: 22px;
         }
 
-        .family-footer {
-            margin-top: 30px;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-        .family-name-highlight {
-            color: var(--dark-gold);
-            font-size: 22px;
-            font-family: 'Playfair Display', serif;
-            font-weight: bold;
-            display: block;
-            margin-top: 5px;
+        .playing { animation: rotate 4s linear infinite; background: #e74c3c !important; }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .floating-flower {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            font-size: 20px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Musiqa pleyeri -->
-    <audio id="bgMusic" loop>
-        <source src="/static/audio/music.mp3" type="audio/mpeg">
-    </audio>
-    <button class="music-btn" onclick="toggleMusic()" id="mBtn">🎵</button>
+<div id="overlay">
+    <div class="welcome-card">
+        <div style="font-size: 50px; margin-bottom: 20px;">✉️</div>
+        <h2 style="font-family: 'Great Vibes', cursive; font-size: 40px; color: var(--dark-gold); margin: 0;">Xush kelibsiz!</h2>
+        <p style="font-family: 'Playfair Display', serif; color: #888; margin: 15px 0 30px;">Nikoh to'yimiz taklifnomasini ko'rish uchun <br> tugmani bosing</p>
+        <button onclick="startEverything()" id="startBtn" style="background: var(--dark-gold); color: white; border: none; padding: 18px 45px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px;">
+            TAKLIFFNOMANI OCHISH
+        </button>
+    </div>
+</div>
 
-    <div class="container">
-        <!-- Kelin-Kuyov rasmi -->
-        <div class="photo-frame">
-            <img src="/static/invitations/{{ w_info.photo }}" alt="Wedding Image">
-        </div>
+<audio id="bgMusic" loop>
+    <source src="/static/audio/music.mp3" type="audio/mpeg">
+</audio>
+<button class="music-btn" onclick="toggleMusic()" id="mBtn">🎵</button>
 
-        <div class="couple-names">{{ w_info.groom }} & {{ w_info.bride }}</div>
-
-        <div class="guest-label">Hurmatli</div>
-        <div class="guest-name">{{ guest.name }}</div>
-
-        <div class="main-text">
-            Siz(lar)ni o‘g‘limiz <b>{{ w_info.groom }}</b> va kelinimiz <b>{{ w_info.bride }}</b>ning 
-            nikoh to‘yi munosabati bilan tashkil etilgan tantanali dasturxonimizning 
-            qadrli mehmoni bo‘lishga taklif qilamiz!
-        </div>
-
-        <!-- STOL VA JOY RAQAMLARI (TAKLY MATNIDAN KEYIN, SANADAN OLDIN) -->
-        <div style="margin-top: 25px;">
-            {% if guest.table and guest.table|string != 'nan' and guest.table|string != 'None' and guest.table != 0 %}
-            <div class="seat-box">
-                <small>STOL</small><br>
-                <b>{{ guest.table|int if guest.table is number else guest.table }}</b>
-            </div>
-            {% endif %}
-            
-            {% if guest.seat and guest.seat|string != 'nan' and guest.seat|string != 'None' and guest.seat != 0 %}
-            <div class="seat-box">
-                <small>JOY</small><br>
-                <b>{{ guest.seat|int if guest.seat is number else guest.seat }}</b>
-            </div>
-            {% endif %}
-        </div>
-        <!-- ------------------------------------------------------------- -->
-
-        <div class="info-section">
-            <div style="margin-bottom: 10px;">
-                <b>Kuni va vaqti:</b><br>
-                <span>{{ format_uzb_date(w_info.date) }}</span>
-            </div>
-            <div>
-                <b>Manzil:</b><br>
-                <span>{{ w_info.venue }}</span>
-            </div>
-        </div>
-
-        <!-- To'y egalari -->
-        <div class="family-footer">
-            Hurmat bilan:
-            <span class="family-name-highlight">{{ w_info.family_name }}lar oilasi</span>
-        </div>
-
-        <a href="{{ w_info.location }}" target="_blank" class="map-btn">📍 TO'YXONA MANZILI</a>
-        
-        <p style="font-size: 12px; margin-top: 25px; color: #aaa;">Tashrifingizdan mamnunmiz!</p>
+<div class="container" id="mainContent">
+    <div class="photo-frame">
+        <img src="/static/invitations/{{ w_info.photo }}" alt="Wedding Image">
     </div>
 
-    <script>
-        var music = document.getElementById("bgMusic");
-        var btn = document.getElementById("mBtn");
+    <div class="couple-names">{{ w_info.groom }} & {{ w_info.bride }}</div>
 
-        function toggleMusic() {
-            if (music.paused) {
-                music.play();
-                btn.innerHTML = "⏸";
-                btn.style.background = "#e74c3c";
-            } else {
-                music.pause();
-                btn.innerHTML = "🎵";
-                btn.style.background = "#d4af37";
-            }
+    <div style="text-transform: uppercase; letter-spacing: 3px; font-size: 14px; color: var(--gold);">Hurmatli</div>
+    <div class="guest-name">{{ guest.name }}</div>
+
+    <div style="font-family: 'Playfair Display', serif; font-style: italic; line-height: 1.8; font-size: 17px; color: #444; padding: 0 10px;">
+        Siz(lar)ni o‘g‘limiz <b>{{ w_info.groom }}</b> va kelinimiz <b>{{ w_info.bride }}</b>ning 
+        nikoh to‘yi munosabati bilan tashkil etilgan tantanali dasturxonimizning 
+        qadrli mehmoni bo‘lishga taklif qilamiz!
+    </div>
+
+    <!-- Teskari Hisoblagich (Sekundlar bilan) -->
+    <div class="countdown-container" id="countdown">
+        <div class="count-item"><span class="count-num" id="days">00</span><span class="count-label">Kun</span></div>
+        <div class="count-item"><span class="count-num" id="hours">00</span><span class="count-label">Soat</span></div>
+        <div class="count-item"><span class="count-num" id="mins">00</span><span class="count-label">Min</span></div>
+        <div class="count-item" id="secs-box"><span class="count-num" id="secs">00</span><span class="count-label">Sek</span></div>
+    </div>
+
+    <div style="margin: 30px 0;">
+        {% if guest.table and guest.table|string != 'nan' and guest.table != 0 %}
+        <div class="seat-box">
+            <small style="color: var(--gold); font-size: 11px;">MAXSUS STOL</small><br>
+            <b style="font-size: 20px;">{{ guest.table }}</b>
+        </div>
+        {% endif %}
+        
+        {% if guest.seat and guest.seat|string != 'nan' and guest.seat != 0 %}
+        <div class="seat-box">
+            <small style="color: var(--gold); font-size: 11px;">JOY RAQAMI</small><br>
+            <b style="font-size: 20px;">{{ guest.seat }}</b>
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 25px 0; margin: 30px 0;">
+        <div style="margin-bottom: 15px;">
+            <b style="color: var(--gold);">KUNI VA VAQTI:</b><br>
+            <span style="font-size: 18px;">{{ format_uzb_date(w_info.date) }}</span>
+        </div>
+        <div>
+            <b style="color: var(--gold);">MANZIL:</b><br>
+            <span style="font-size: 18px;">{{ w_info.venue }}</span>
+        </div>
+    </div>
+
+    <div style="font-size: 16px;">
+        Hurmat bilan:
+        <span style="color: var(--dark-gold); font-size: 24px; font-family: 'Playfair Display', serif; font-weight: bold; display: block; margin-top: 5px;">
+            {{ w_info.family_name }}lar oilasi
+        </span>
+    </div>
+
+    <a href="{{ w_info.location }}" target="_blank" class="map-btn">📍 TO'YXONA MANZILI</a>
+    
+    <p style="font-size: 12px; margin-top: 40px; color: #ccc; letter-spacing: 2px;">EST. 2026</p>
+</div>
+
+<script>
+    const music = document.getElementById("bgMusic");
+    const btn = document.getElementById("mBtn");
+    
+    // MUHIM: Sanani JS tushunadigan formatga o'tkazamiz
+    // Agar w_info.date "2024-12-31 19:00:00" bo'lsa, "T" harfini qo'shish kerak
+    let dateStr = "{{ w_info.date }}".replace(" ", "T"); 
+    const weddingDate = new Date(dateStr).getTime();
+
+    function updateCountdown() {
+        const now = new Date().getTime();
+        const diff = weddingDate - now;
+
+        // Xatolikni tekshirish uchun konsolga chiqaramiz
+        if (isNaN(weddingDate)) {
+            console.error("Sana formati noto'g'ri!");
+            document.getElementById("countdown").innerHTML = "Sana noto'g'ri kiritilgan";
+            return;
         }
-    </script>
+
+        if (diff > 0) {
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById("days").innerText = d < 10 ? "0" + d : d;
+            document.getElementById("hours").innerText = h < 10 ? "0" + h : h;
+            document.getElementById("mins").innerText = m < 10 ? "0" + m : m;
+            document.getElementById("secs").innerText = s < 10 ? "0" + s : s;
+        } else {
+            document.getElementById("countdown").innerHTML = "<b style='color:var(--gold); font-size: 20px;'>TO'Y BOSHLANDI! ✨</b>";
+        }
+    }
+    
+    // Har soniyada yangilash
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    // Qolgan funksiyalar (startEverything, toggleMusic va h.k.) o'zgarishsiz qoladi...
+    function startEverything() {
+        music.play().catch(e => console.log("Musiqa brauzer tomonidan bloklandi"));
+        btn.innerHTML = "⏸";
+        btn.classList.add("playing");
+
+        gsap.to("#overlay", { opacity: 0, duration: 0.8, onComplete: () => {
+            document.getElementById("overlay").style.display = "none";
+        }});
+
+        gsap.to("#mainContent", { opacity: 1, y: 0, duration: 1.2, ease: "power4.out", delay: 0.2 });
+
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#d4af37', '#fdfaf6', '#b8860b']
+        });
+
+        createFlowers();
+    }
+
+    function toggleMusic() {
+        if (music.paused) {
+            music.play();
+            btn.innerHTML = "⏸";
+            btn.classList.add("playing");
+        } else {
+            music.pause();
+            btn.innerHTML = "🎵";
+            btn.classList.remove("playing");
+        }
+    }
+
+    function createFlowers() {
+        for(let i=0; i<15; i++) {
+            setTimeout(() => {
+                const flower = document.createElement('div');
+                flower.className = 'floating-flower';
+                flower.innerHTML = '🌸';
+                flower.style.left = Math.random() * 100 + 'vw';
+                flower.style.top = '-5vh';
+                document.body.appendChild(flower);
+
+                gsap.to(flower, {
+                    y: '105vh',
+                    x: (Math.random() - 0.5) * 200,
+                    rotation: 360,
+                    duration: Math.random() * 3 + 2,
+                    ease: "none",
+                    onComplete: () => flower.remove()
+                });
+            }, i * 300);
+        }
+    }
+</script>
+
 </body>
 </html>

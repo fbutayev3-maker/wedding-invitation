@@ -8,20 +8,47 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
         .container { max-width: 900px; margin: 0 auto; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px; }
-        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #2c3e50; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #2c3e50; margin-top: 0; }
         
         /* Form elementlari */
         .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
         input[type="text"], input[type="url"], input[type="datetime-local"], select {
             width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px;
         }
         .flex-group { display: flex; gap: 15px; }
         .flex-group > div { flex: 1; }
 
+        /* Shablon tanlash stili */
+        .template-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .template-option {
+            border: 2px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+            text-align: center;
+        }
+        .template-option:hover { border-color: #3498db; }
+        .template-option input[type="radio"] {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            transform: scale(1.3);
+        }
+        .template-option.active { border-color: #27ae60; background: #f0fff4; }
+        .template-name { display: block; font-weight: bold; color: #2c3e50; }
+        .template-desc { font-size: 12px; color: #7f8c8d; }
+
         /* Tugmalar */
         .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-weight: 600; display: inline-block; transition: 0.3s; }
-        .btn-submit { background: #27ae60; color: white; width: 100%; margin-top: 10px; }
+        .btn-submit { background: #27ae60; color: white; width: 100%; margin-top: 10px; font-size: 16px; }
         .btn-submit:hover { background: #219150; }
         .btn-view { background: #3498db; color: white; font-size: 13px; }
         .btn-view:hover { background: #2980b9; }
@@ -51,30 +78,48 @@
     <div class="card">
         <h2>+ Yangi Loyiha (To'y) Yarating</h2>
         <form action="{{ url_for('add_wedding') }}" method="post" enctype="multipart/form-data">
+            
+            <!-- Shablon tanlash (YANGI QISM) -->
             <div class="form-group">
-                <label>Loyiha nomi (Papka nomi bo'ladi, masalan: Aziz_Lola)</label>
+                <label>Taklifnoma Dizaynini Tanlang:</label>
+                <div class="template-selector">
+                    <label class="template-option">
+                        <input type="radio" name="template_choice" value="default" checked>
+                        <span class="template-name">🖼️ Klassik Dizayn</span>
+                        <span class="template-desc">Markazda kelin-kuyov rasmi bilan</span>
+                    </label>
+                    <label class="template-option">
+                        <input type="radio" name="template_choice" value="kabutarlar">
+                        <span class="template-name">🕊️ Kabutarlar</span>
+                        <span class="template-desc">Minimalistik tilla ramkali dizayn</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Loyiha nomi (Papka nomi bo'ladi)</label>
                 <input type="text" name="wedding_name" placeholder="Masalan: aziz_toy" required>
             </div>
 
             <div class="flex-group">
                 <div class="form-group">
                     <label>Kuyov ismi</label>
-                    <input type="text" name="groom" placeholder="Masalan: Azizbek" required>
+                    <input type="text" name="groom" placeholder="Azizbek" required>
                 </div>
                 <div class="form-group">
                     <label>Kelin ismi</label>
-                    <input type="text" name="bride" placeholder="Masalan: Sevinch" required>
+                    <input type="text" name="bride" placeholder="Sevinch" required>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>To'y egalari (Taklifnoma oxirida chiqadi)</label>
-                <input type="text" name="family_name" placeholder="Masalan: Karimovlar oilasi" required>
+                <label>To'y egalari (Taklifnoma oxirida)</label>
+                <input type="text" name="family_name" placeholder="Karimovlar oilasi" required>
             </div>
 
             <div class="form-group">
                 <label>Manzil (To'yxona nomi)</label>
-                <input type="text" name="venue" placeholder="Masalan: "Tantanalar" saroyi" required>
+                <input type="text" name="venue" placeholder='"Tantanalar" saroyi' required>
             </div>
 
             <div class="flex-group">
@@ -83,13 +128,13 @@
                     <input type="datetime-local" name="date" required>
                 </div>
                 <div class="form-group">
-                    <label>Google Map Link (Location)</label>
+                    <label>Google Map Link</label>
                     <input type="url" name="location" placeholder="https://maps.google.com/...">
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Kelin-kuyov rasmi (Taklifnoma foni uchun)</label>
+            <div class="form-group" id="photo-upload-group">
+                <label>Kelin-kuyov rasmi (Faqat Klassik dizayn uchun shart)</label>
                 <input type="file" name="photo" accept="image/*">
             </div>
 
@@ -113,28 +158,40 @@
                 </div>
                 {% endfor %}
                 
-                <button type="submit" class="btn btn-del" onclick="return confirm('Tanlangan barcha loyihalarni va ularga tegishli rasmlarni o\'chirishga aminmisiz?')">
+                <button type="submit" class="btn btn-del" onclick="return confirm('O\'chirmoqchimisiz?')">
                     Tanlanganlarni o'chirish
                 </button>
             </form>
         {% else %}
             <div class="empty-msg">
-                <p>Hozircha hech qanday loyiha yo'q. Yuqoridagi forma orqali birinchi to'y loyihasini yarating.</p>
+                <p>Hozircha loyihalar yo'q.</p>
             </div>
         {% endif %}
     </div>
 </div>
 
 <script>
-    // Agar hech narsa tanlanmasa o'chirish tugmasini tekshirish
-    document.getElementById('deleteForm').onsubmit = function() {
-        var checkboxes = document.querySelectorAll('input[name="wedding_ids"]:checked');
-        if (checkboxes.length === 0) {
-            alert('Iltimos, o\'chirmoqchi bo\'lgan loyihalaringizni tanlang!');
-            return false;
-        }
-        return true;
-    };
+    // Tanlangan shablonga qarab vizual effekt
+    const options = document.querySelectorAll('.template-option');
+    options.forEach(opt => {
+        opt.addEventListener('click', function() {
+            options.forEach(o => o.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Delete tekshiruvi
+    const deleteForm = document.getElementById('deleteForm');
+    if (deleteForm) {
+        deleteForm.onsubmit = function() {
+            var checkboxes = document.querySelectorAll('input[name="wedding_ids"]:checked');
+            if (checkboxes.length === 0) {
+                alert('Iltimos, loyihalarni tanlang!');
+                return false;
+            }
+            return true;
+        };
+    }
 </script>
 
 </body>

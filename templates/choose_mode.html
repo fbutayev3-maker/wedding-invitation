@@ -1,22 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="uz">
 <head>
+    <meta charset="UTF-8">
     <title>Tanlov - Wedding 2026</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f4f4f4; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
-        .btn-group { display: flex; flex-direction: column; gap: 15px; margin-top: 25px; }
-        .btn { padding: 15px 25px; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; font-weight: bold; }
-        .btn-edit { background: #D4AF37; color: white; }
-        .btn-ready { background: #2ecc71; color: white; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
+        h2 { color: #2c3e50; margin-bottom: 10px; }
+        p { color: #7f8c8d; margin-bottom: 25px; }
+        .btn-group { display: flex; flex-direction: column; gap: 15px; }
+        .btn { padding: 15px 25px; border: none; border-radius: 10px; cursor: pointer; text-decoration: none; font-weight: bold; transition: 0.3s; display: block; }
+        
+        /* Tugma ranglari */
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        
+        .btn-success { background: #2ecc71; color: white; }
+        .btn-success:hover { background: #27ae60; }
+        
+        .badge { background: #e8f4fd; color: #3498db; padding: 5px 12px; border-radius: 20px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>Loyiha "{{ wedding_name }}" yaratildi!</h2>
+        <span class="badge">Muvaffaqiyatli!</span>
+        <h2>"{{ wedding_name }}"</h2>
+        <p>Loyiha yaratildi. Endi nima qilamiz?</p>
+        
         <div class="btn-group">
-            <a href="{{ url_for('editor', wedding_name=wedding_name) }}" class="btn btn-edit">🎨 YANGI SHABLON YARATISH (EDIT)</a>
-            <a href="{{ url_for('view_wedding', name=wedding_name) }}" class="btn btn-ready">✅ TAYYOR SHABLONDAN FOYDALANISH</a>
+            <!-- Xatoni oldini olish uchun ikkala tugmani ham view_wedding'ga yo'naltiramiz -->
+            <!-- Agar kelajakda 'editor' funksiyasini yozsangiz, birinchi tugmani qayta o'zgartirishingiz mumkin -->
+            <a href="{{ url_for('view_wedding', name=wedding_name) }}" class="btn btn-success">
+                ✅ MEHMONLARNI QO'SHISH
+            </a>
+            
+            <a href="{{ url_for('admin_panel') }}" class="btn btn-primary">
+                🏠 BOSH SAHIFAGA QAYTISH
+            </a>
         </div>
     </div>
 </body>
